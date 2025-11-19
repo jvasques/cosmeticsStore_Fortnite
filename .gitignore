@@ -3,6 +3,11 @@ utils/
 node_modules/
 backend/node_modules/
 backend/.env
+frontend/node_modules/
+frontend/.env
+frontend/.github/
+frontend/.vscode/
+frontend/.gitignore
 .env
 .DS_Store
 *.md
