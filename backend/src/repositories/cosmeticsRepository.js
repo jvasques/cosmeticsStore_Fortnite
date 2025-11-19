@@ -70,6 +70,24 @@ export async function getCosmeticsCount() {
   return rows[0]?.count ?? 0;
 }
 
+export async function getNewCosmetics({ limit = 50, offset = 0 } = {}) {
+  const { rows } = await pool.query(
+    `SELECT * FROM cosmetics
+     WHERE is_new = true
+     ORDER BY new_since DESC NULLS LAST, added_at DESC NULLS LAST, id
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+  return rows;
+}
+
+export async function getNewCosmeticsCount() {
+  const { rows } = await pool.query(
+    "SELECT COUNT(1)::int AS count FROM cosmetics WHERE is_new = true"
+  );
+  return rows[0]?.count ?? 0;
+}
+
 export async function resetNewFlags() {
   await pool.query("UPDATE cosmetics SET is_new = false, new_since = NULL WHERE is_new = true");
 }

@@ -1,5 +1,50 @@
 import pool from "../db/pool.js";
 
+function buildShopFilters(filters = {}) {
+  const conditions = [];
+  const params = [];
+
+  if (typeof filters.bundle === "boolean") {
+    params.push(filters.bundle);
+    conditions.push(`se.is_bundle = $${params.length}`);
+  }
+
+  if (Array.isArray(filters.rarity) && filters.rarity.length) {
+    params.push(filters.rarity);
+    conditions.push(`EXISTS (
+      SELECT 1
+      FROM shop_entry_items sei
+      JOIN cosmetics c ON c.id = sei.cosmetic_id
+      WHERE sei.offer_id = se.offer_id
+        AND LOWER(c.rarity_value) = ANY($${params.length})
+    )`);
+  }
+
+  if (Array.isArray(filters.type) && filters.type.length) {
+    params.push(filters.type);
+    conditions.push(`EXISTS (
+      SELECT 1
+      FROM shop_entry_items sei
+      JOIN cosmetics c ON c.id = sei.cosmetic_id
+      WHERE sei.offer_id = se.offer_id
+        AND LOWER(c.type_value) = ANY($${params.length})
+    )`);
+  }
+
+  if (filters.onlyNew === true) {
+    conditions.push(`EXISTS (
+      SELECT 1
+      FROM shop_entry_items sei
+      JOIN cosmetics c ON c.id = sei.cosmetic_id
+      WHERE sei.offer_id = se.offer_id
+        AND c.is_new = true
+    )`);
+  }
+
+  const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  return { whereClause, params };
+}
+
 const INSERT_ENTRY = `
 INSERT INTO shop_entries (
   offer_id,
@@ -56,18 +101,24 @@ export async function replaceShopEntries(entries) {
   }
 }
 
-export async function getShopEntries({ limit = 100, offset = 0 } = {}) {
+export async function getShopEntries({ limit = 100, offset = 0, filters = {} } = {}) {
+  const { whereClause, params } = buildShopFilters(filters);
   const query = `
-    WITH aggregated AS (
+    WITH filtered AS (
+      SELECT *
+      FROM shop_entries se
+      ${whereClause}
+    ),
+    aggregated AS (
       SELECT
-        se.offer_id,
-        se.regular_price,
-        se.final_price,
-        se.in_date,
-        se.out_date,
-        se.is_bundle,
-        se.bundle_name,
-        se.bundle_image,
+        f.offer_id,
+        f.regular_price,
+        f.final_price,
+        f.in_date,
+        f.out_date,
+        f.is_bundle,
+        f.bundle_name,
+        f.bundle_image,
         COALESCE(json_agg(
           json_build_object(
             'id', sei.cosmetic_id,
@@ -82,25 +133,39 @@ export async function getShopEntries({ limit = 100, offset = 0 } = {}) {
           )
           ORDER BY c.added_at DESC NULLS LAST
         ) FILTER (WHERE sei.cosmetic_id IS NOT NULL), '[]'::json) AS items
-      FROM shop_entries se
-      LEFT JOIN shop_entry_items sei ON sei.offer_id = se.offer_id
+      FROM filtered f
+      LEFT JOIN shop_entry_items sei ON sei.offer_id = f.offer_id
       LEFT JOIN cosmetics c ON c.id = sei.cosmetic_id
-      GROUP BY se.offer_id
+      GROUP BY
+        f.offer_id,
+        f.regular_price,
+        f.final_price,
+        f.in_date,
+        f.out_date,
+        f.is_bundle,
+        f.bundle_name,
+        f.bundle_image
     )
     SELECT *
     FROM aggregated
     ORDER BY in_date DESC NULLS LAST, offer_id
-    LIMIT $1 OFFSET $2;
+    LIMIT $${params.length + 1} OFFSET $${params.length + 2};
   `;
 
-  const { rows } = await pool.query(query, [limit, offset]);
+  const { rows } = await pool.query(query, [...params, limit, offset]);
   return rows.map((row) => ({
     ...row,
     items: Array.isArray(row.items) ? row.items : JSON.parse(row.items ?? "[]"),
   }));
 }
 
-export async function getShopEntriesCount() {
-  const { rows } = await pool.query("SELECT COUNT(*)::int AS count FROM shop_entries");
+export async function getShopEntriesCount(filters = {}) {
+  const { whereClause, params } = buildShopFilters(filters);
+  const query = `
+    SELECT COUNT(*)::int AS count
+    FROM shop_entries se
+    ${whereClause}
+  `;
+  const { rows } = await pool.query(query, params);
   return rows[0]?.count ?? 0;
 }

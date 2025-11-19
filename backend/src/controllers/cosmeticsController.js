@@ -1,7 +1,12 @@
 import { syncCosmetics } from "../services/cosmeticsSyncService.js";
 import { syncNewCosmetics } from "../services/newCosmeticsService.js";
 import { syncShopEntries } from "../services/shopSyncService.js";
-import { getCosmetics, getCosmeticsCount } from "../repositories/cosmeticsRepository.js";
+import {
+  getCosmetics,
+  getCosmeticsCount,
+  getNewCosmetics,
+  getNewCosmeticsCount,
+} from "../repositories/cosmeticsRepository.js";
 
 export async function triggerSync(req, res, next) {
   try {
@@ -30,6 +35,24 @@ export async function listCosmetics(req, res, next) {
     const [rows, total] = await Promise.all([
       getCosmetics({ limit, offset }),
       getCosmeticsCount(),
+    ]);
+
+    res.status(200).json({
+      total,
+      items: rows,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listNewCosmetics(req, res, next) {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Number(req.query.offset) || 0;
+    const [rows, total] = await Promise.all([
+      getNewCosmetics({ limit, offset }),
+      getNewCosmeticsCount(),
     ]);
 
     res.status(200).json({
