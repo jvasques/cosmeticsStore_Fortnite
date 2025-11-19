@@ -43,3 +43,30 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_idx ON users ((LOWER(email)));
+
+CREATE TABLE IF NOT EXISTS user_wallets (
+    user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    balance BIGINT NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount BIGINT NOT NULL,
+    type TEXT NOT NULL,
+    description TEXT,
+    metadata JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS wallet_transactions_user_created_idx
+    ON wallet_transactions(user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS inventory_items (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id),
+    quantity INT NOT NULL DEFAULT 1,
+    acquired_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_id, cosmetic_id)
+);

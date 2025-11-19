@@ -169,3 +169,60 @@ export async function getShopEntriesCount(filters = {}) {
   const { rows } = await pool.query(query, params);
   return rows[0]?.count ?? 0;
 }
+
+export async function getShopEntryById(offerId, client) {
+  const executor = client ?? pool;
+  const query = `
+    SELECT
+      se.offer_id,
+      se.regular_price,
+      se.final_price,
+      se.in_date,
+      se.out_date,
+      se.is_bundle,
+      se.bundle_name,
+      se.bundle_image,
+      COALESCE(json_agg(
+        json_build_object(
+          'id', sei.cosmetic_id,
+          'name', c.name,
+          'description', c.description,
+          'type_value', c.type_value,
+          'rarity_value', c.rarity_value,
+          'image_small_icon', c.image_small_icon,
+          'image_icon', c.image_icon
+        )
+        ORDER BY c.added_at DESC NULLS LAST
+      ) FILTER (WHERE sei.cosmetic_id IS NOT NULL), '[]'::json) AS items
+    FROM shop_entries se
+    LEFT JOIN shop_entry_items sei ON sei.offer_id = se.offer_id
+    LEFT JOIN cosmetics c ON c.id = sei.cosmetic_id
+    WHERE se.offer_id = $1
+    GROUP BY se.offer_id;
+  `;
+
+  const { rows } = await executor.query(query, [offerId]);
+  const entry = rows[0];
+  if (!entry) {
+    return null;
+  }
+
+  return {
+    ...entry,
+    items: Array.isArray(entry.items) ? entry.items : JSON.parse(entry.items ?? "[]"),
+  };
+}
+
+export async function getLatestPriceForCosmetic(cosmeticId, client) {
+  const executor = client ?? pool;
+  const { rows } = await executor.query(
+    `SELECT se.final_price, se.regular_price
+     FROM shop_entry_items sei
+     JOIN shop_entries se ON se.offer_id = sei.offer_id
+     WHERE sei.cosmetic_id = $1
+     ORDER BY se.in_date DESC NULLS LAST
+     LIMIT 1`,
+    [cosmeticId]
+  );
+  return rows[0] || null;
+}

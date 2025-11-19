@@ -29,3 +29,14 @@ export async function getUserById(id) {
   const { rows } = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
   return rows[0] || null;
 }
+
+export async function updateDisplayName(userId, displayName) {
+  const { rows } = await pool.query(
+    `UPDATE users
+     SET display_name = $2
+     WHERE id = $1
+     RETURNING *`,
+    [userId, displayName]
+  );
+  return rows[0] || null;
+}
