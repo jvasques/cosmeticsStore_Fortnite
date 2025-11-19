@@ -1,12 +1,22 @@
 import { syncCosmetics } from "../services/cosmeticsSyncService.js";
+import { syncNewCosmetics } from "../services/newCosmeticsService.js";
+import { syncShopEntries } from "../services/shopSyncService.js";
 import { getCosmetics, getCosmeticsCount } from "../repositories/cosmeticsRepository.js";
 
 export async function triggerSync(req, res, next) {
   try {
-    const result = await syncCosmetics();
+    const cosmeticsResult = await syncCosmetics();
+    const newResult = await syncNewCosmetics();
+    const shopResult = await syncShopEntries();
     res.status(200).json({
       message: "Sincronização concluída",
-      totalProcessado: result.inserted,
+      totals: {
+        cosmeticsUpserted: cosmeticsResult.inserted,
+        newCosmeticsFetched: newResult.fetched,
+        newCosmeticsFlagged: newResult.flagged,
+        shopEntriesFetched: shopResult.fetched,
+        shopEntriesPersisted: shopResult.persisted,
+      },
     });
   } catch (error) {
     next(error);

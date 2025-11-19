@@ -6,6 +6,11 @@ const env = {
   port: Number(process.env.PORT || 3000),
   fortniteApiUrl:
     process.env.FORTNITE_API_URL || "https://fortnite-api.com/v2/cosmetics?language=pt-BR",
+  fortniteApiNewUrl:
+    process.env.FORTNITE_API_NEW_URL ||
+    "https://fortnite-api.com/v2/cosmetics/new?language=pt-BR",
+  fortniteShopUrl:
+    process.env.FORTNITE_API_SHOP_URL || "https://fortnite-api.com/v2/shop?language=pt-BR",
   db: {
     host: process.env.POSTGRES_HOST || "localhost",
     port: Number(process.env.POSTGRES_PORT || 5432),

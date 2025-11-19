@@ -69,3 +69,39 @@ export async function getCosmeticsCount() {
   const { rows } = await pool.query("SELECT COUNT(1)::int AS count FROM cosmetics");
   return rows[0]?.count ?? 0;
 }
+
+export async function resetNewFlags() {
+  await pool.query("UPDATE cosmetics SET is_new = false, new_since = NULL WHERE is_new = true");
+}
+
+export async function markCosmeticsAsNew(items) {
+  if (!items?.length) {
+    return { updated: 0 };
+  }
+
+  const client = await pool.connect();
+  let updated = 0;
+
+  try {
+    await client.query("BEGIN");
+
+    for (const item of items) {
+      const result = await client.query(
+        `UPDATE cosmetics
+         SET is_new = true,
+             new_since = COALESCE($2, added_at, new_since)
+         WHERE id = $1`,
+        [item.id, item.new_since]
+      );
+      updated += result.rowCount ?? 0;
+    }
+
+    await client.query("COMMIT");
+    return { updated };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
