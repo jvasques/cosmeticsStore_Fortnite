@@ -40,7 +40,7 @@ export async function getWalletSummary(req, res, next) {
     const wallet = await getWallet(req.user.id);
     const transactions = await listWalletTransactions(req.user.id, { limit, offset });
     res.status(200).json({
-      balance: wallet?.balance ?? 0,
+      balance: wallet ? Number(wallet.balance) : 0,
       updatedAt: wallet?.updated_at ?? null,
       transactions,
     });

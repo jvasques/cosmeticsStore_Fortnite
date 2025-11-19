@@ -1,10 +1,16 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import env from "../config/env.js";
+import pool from "../db/pool.js";
 import { createUser, findUserByEmail } from "../repositories/userRepository.js";
-import { ensureWallet } from "../repositories/walletRepository.js";
+import {
+  ensureWallet,
+  updateWalletBalance,
+  createWalletTransaction,
+} from "../repositories/walletRepository.js";
 
 const SALT_ROUNDS = 10;
+const WELCOME_BONUS = 10_000;
 
 export function sanitizeUser(user) {
   if (!user) {
@@ -56,8 +62,31 @@ export async function registerUser({ email, password, displayName }) {
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const safeDisplayName = displayName?.trim() || email.split("@")[0];
-  const user = await createUser({ email, passwordHash, displayName: safeDisplayName });
-  await ensureWallet(user.id);
+  const client = await pool.connect();
+  let user;
+  try {
+    await client.query("BEGIN");
+    user = await createUser({ email, passwordHash, displayName: safeDisplayName }, client);
+    await ensureWallet(user.id, client);
+    await updateWalletBalance(user.id, WELCOME_BONUS, client);
+    await createWalletTransaction(
+      {
+        userId: user.id,
+        amount: WELCOME_BONUS,
+        type: "credit",
+        description: "Bônus de boas-vindas",
+        metadata: { reason: "welcome_bonus" },
+      },
+      client
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+
   const token = generateToken(user);
 
   return {
