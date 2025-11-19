@@ -15,6 +15,13 @@ function mapShopEntry(entry) {
   }
 
   const brItems = Array.isArray(entry.brItems) ? entry.brItems : [];
+  const validItems = brItems.map((item) => item?.id).filter(Boolean);
+
+  if (!validItems.length) {
+    return null;
+  }
+
+  const isBundle = Boolean(entry.bundle) || validItems.length > 1;
 
   return {
     offer_id: entry.offerId,
@@ -22,10 +29,10 @@ function mapShopEntry(entry) {
     final_price: entry.finalPrice ?? null,
     in_date: parseDate(entry.inDate),
     out_date: parseDate(entry.outDate),
-    is_bundle: Boolean(entry.bundle),
+    is_bundle: isBundle,
     bundle_name: entry.bundle?.name ?? null,
     bundle_image: entry.bundle?.image ?? null,
-    item_ids: brItems.map((item) => item?.id).filter(Boolean),
+    item_ids: validItems,
   };
 }
 

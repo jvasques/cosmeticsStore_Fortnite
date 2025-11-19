@@ -55,3 +55,52 @@ export async function replaceShopEntries(entries) {
     client.release();
   }
 }
+
+export async function getShopEntries({ limit = 100, offset = 0 } = {}) {
+  const query = `
+    WITH aggregated AS (
+      SELECT
+        se.offer_id,
+        se.regular_price,
+        se.final_price,
+        se.in_date,
+        se.out_date,
+        se.is_bundle,
+        se.bundle_name,
+        se.bundle_image,
+        COALESCE(json_agg(
+          json_build_object(
+            'id', sei.cosmetic_id,
+            'name', c.name,
+            'description', c.description,
+            'type_value', c.type_value,
+            'rarity_value', c.rarity_value,
+            'image_small_icon', c.image_small_icon,
+            'image_icon', c.image_icon,
+            'is_new', c.is_new,
+            'new_since', c.new_since
+          )
+          ORDER BY c.added_at DESC NULLS LAST
+        ) FILTER (WHERE sei.cosmetic_id IS NOT NULL), '[]'::json) AS items
+      FROM shop_entries se
+      LEFT JOIN shop_entry_items sei ON sei.offer_id = se.offer_id
+      LEFT JOIN cosmetics c ON c.id = sei.cosmetic_id
+      GROUP BY se.offer_id
+    )
+    SELECT *
+    FROM aggregated
+    ORDER BY in_date DESC NULLS LAST, offer_id
+    LIMIT $1 OFFSET $2;
+  `;
+
+  const { rows } = await pool.query(query, [limit, offset]);
+  return rows.map((row) => ({
+    ...row,
+    items: Array.isArray(row.items) ? row.items : JSON.parse(row.items ?? "[]"),
+  }));
+}
+
+export async function getShopEntriesCount() {
+  const { rows } = await pool.query("SELECT COUNT(*)::int AS count FROM shop_entries");
+  return rows[0]?.count ?? 0;
+}
