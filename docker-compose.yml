@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: fortnite_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fortnite
+      POSTGRES_USER: fortnite
+      POSTGRES_PASSWORD: fortnite
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fortnite_backend
+    depends_on:
+      - db
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      FORTNITE_API_URL: https://fortnite-api.com/v2/cosmetics?language=pt-BR
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: fortnite
+      POSTGRES_USER: fortnite
+      POSTGRES_PASSWORD: fortnite
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
