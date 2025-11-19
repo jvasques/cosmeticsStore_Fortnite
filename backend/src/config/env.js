@@ -11,6 +11,10 @@ const env = {
     "https://fortnite-api.com/v2/cosmetics/new?language=pt-BR",
   fortniteShopUrl:
     process.env.FORTNITE_API_SHOP_URL || "https://fortnite-api.com/v2/shop?language=pt-BR",
+  jwt: {
+    secret: process.env.JWT_SECRET || "dev-secret-change-me",
+    expiresIn: process.env.JWT_EXPIRES_IN || "12h",
+  },
   db: {
     host: process.env.POSTGRES_HOST || "localhost",
     port: Number(process.env.POSTGRES_PORT || 5432),
