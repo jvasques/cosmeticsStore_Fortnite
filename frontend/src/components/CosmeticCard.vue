@@ -1,0 +1,88 @@
+<script setup>
+import { computed } from "vue";
+import BaseBadge from "./ui/BaseBadge.vue";
+import BaseButton from "./ui/BaseButton.vue";
+
+const props = defineProps({
+  cosmetic: {
+    type: Object,
+    required: true,
+  },
+  owned: {
+    type: Boolean,
+    default: false,
+  },
+  isNew: {
+    type: Boolean,
+    default: false,
+  },
+  isOnSale: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const emit = defineEmits(["inspect", "add-to-cart"]);
+
+const cover = computed(() => props.cosmetic?.images?.icon ?? props.cosmetic?.images?.smallIcon);
+const rarity = computed(() => props.cosmetic?.rarity ?? props.cosmetic?.rarity_value ?? "common");
+const rarityKey = computed(() => `${rarity.value ?? "common"}`.toLowerCase());
+
+const rarityMap = {
+  legendary: "from-amber-500/80 to-orange-500/40",
+  epic: "from-purple-500/80 to-indigo-500/30",
+  rare: "from-sky-500/80 to-blue-500/30",
+  uncommon: "from-emerald-500/80 to-green-500/30",
+  common: "from-zinc-500/60 to-slate-500/30",
+};
+</script>
+
+<template>
+  <article
+    class="group relative overflow-hidden rounded-3xl border border-white/5 bg-surface-card/80 p-4 shadow-card transition hover:-translate-y-1 hover:border-white/20"
+  >
+    <div
+      class="relative h-48 w-full overflow-hidden rounded-2xl bg-gradient-to-b from-surface-light to-surface-dark"
+    >
+      <img
+        v-if="cover"
+        :src="cover"
+        :alt="props.cosmetic?.name"
+        class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+      />
+      <div
+        class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+      />
+      <div class="absolute left-3 top-3 flex flex-wrap gap-2">
+        <BaseBadge v-if="props.isNew" variant="success">Novo</BaseBadge>
+        <BaseBadge v-if="props.isOnSale" variant="warning">Loja</BaseBadge>
+        <BaseBadge v-if="props.owned" variant="neutral">Adquirido</BaseBadge>
+      </div>
+    </div>
+
+    <div class="mt-4 flex flex-col gap-3">
+      <div>
+        <p class="text-xs uppercase tracking-[0.5em] text-white/40">{{ rarity }}</p>
+        <h3 class="text-xl font-bold text-white">{{ props.cosmetic?.name }}</h3>
+        <p class="text-sm text-white/60 line-clamp-2">{{ props.cosmetic?.description }}</p>
+      </div>
+
+      <div class="flex items-center justify-between gap-3">
+        <BaseButton variant="secondary" size="sm" @click="emit('inspect', props.cosmetic)">
+          Detalhes
+        </BaseButton>
+        <BaseButton
+          size="sm"
+          :disabled="props.owned"
+          @click="emit('add-to-cart', props.cosmetic)">
+          {{ props.owned ? 'No inventário' : 'Adicionar' }}
+        </BaseButton>
+      </div>
+    </div>
+
+    <div
+      class="pointer-events-none absolute inset-x-0 bottom-0 h-1 w-full bg-gradient-to-r"
+      :class="rarityMap[rarityKey.value] ?? rarityMap.common"
+    />
+  </article>
+</template>
