@@ -9,7 +9,7 @@ export async function listInventory(userId, { limit = 50, offset = 0, client } =
   const { rows } = await executor.query(
     `SELECT
        ii.cosmetic_id,
-       ii.quantity,
+       ii.offer_id,
        ii.acquired_at,
        c.name,
        c.description,
@@ -31,8 +31,9 @@ export async function getInventoryItem(userId, cosmeticId, { forUpdate = false, 
   const executor = getExecutor(client);
   const locking = forUpdate ? "FOR UPDATE" : "";
   const { rows } = await executor.query(
-    `SELECT user_id, cosmetic_id, quantity, acquired_at
-     FROM inventory_items
+    `SELECT ii.user_id, ii.cosmetic_id, ii.offer_id, ii.acquired_at, c.name AS cosmetic_name
+     FROM inventory_items ii
+     JOIN cosmetics c ON c.id = ii.cosmetic_id
      WHERE user_id = $1 AND cosmetic_id = $2
      ${locking}`,
     [userId, cosmeticId]
@@ -40,39 +41,62 @@ export async function getInventoryItem(userId, cosmeticId, { forUpdate = false, 
   return rows[0] || null;
 }
 
-export async function incrementInventory({ userId, cosmeticId, quantity = 1 }, client) {
+export async function getInventoryItems(userId, cosmeticIds, { forUpdate = false, client } = {}) {
+  if (!cosmeticIds?.length) {
+    return [];
+  }
+  const executor = getExecutor(client);
+  const locking = forUpdate ? "FOR UPDATE" : "";
+  const { rows } = await executor.query(
+    `SELECT ii.user_id, ii.cosmetic_id, ii.offer_id, ii.acquired_at, c.name AS cosmetic_name
+     FROM inventory_items ii
+     JOIN cosmetics c ON c.id = ii.cosmetic_id
+     WHERE ii.user_id = $1 AND ii.cosmetic_id = ANY($2::text[])
+     ${locking}`,
+    [userId, cosmeticIds]
+  );
+  return rows;
+}
+
+export async function incrementInventory({ userId, cosmeticId, offerId }, client) {
   const executor = getExecutor(client);
   await executor.query(
-    `INSERT INTO inventory_items (user_id, cosmetic_id, quantity)
+    `INSERT INTO inventory_items (user_id, cosmetic_id, offer_id)
      VALUES ($1, $2, $3)
      ON CONFLICT (user_id, cosmetic_id)
      DO UPDATE SET
-       quantity = inventory_items.quantity + EXCLUDED.quantity,
+       offer_id = EXCLUDED.offer_id,
        acquired_at = NOW()`,
-    [userId, cosmeticId, quantity]
+    [userId, cosmeticId, offerId ?? null]
   );
 }
 
-export async function decrementInventory({ userId, cosmeticId, quantity = 1 }, client) {
+export async function listInventoryItemsByOffer(userId, offerId, { forUpdate = false, client } = {}) {
+  if (!offerId) {
+    return [];
+  }
   const executor = getExecutor(client);
+  const locking = forUpdate ? "FOR UPDATE" : "";
   const { rows } = await executor.query(
-    `UPDATE inventory_items
-     SET quantity = quantity - $3
-     WHERE user_id = $1 AND cosmetic_id = $2 AND quantity >= $3
-     RETURNING quantity`,
-    [userId, cosmeticId, quantity]
+    `SELECT ii.user_id, ii.cosmetic_id, ii.offer_id, ii.acquired_at, c.name AS cosmetic_name
+     FROM inventory_items ii
+     JOIN cosmetics c ON c.id = ii.cosmetic_id
+     WHERE user_id = $1 AND offer_id = $2
+     ${locking}`,
+    [userId, offerId]
   );
+  return rows;
+}
 
-  if (!rows[0]) {
-    const error = new Error("Item insuficiente no inventário");
-    error.status = 400;
-    throw error;
+export async function removeInventoryItems(userId, cosmeticIds, client) {
+  if (!cosmeticIds?.length) {
+    return 0;
   }
-
-  if (rows[0].quantity <= 0) {
-    await executor.query(
-      "DELETE FROM inventory_items WHERE user_id = $1 AND cosmetic_id = $2",
-      [userId, cosmeticId]
-    );
-  }
+  const executor = getExecutor(client);
+  const { rowCount } = await executor.query(
+    `DELETE FROM inventory_items
+     WHERE user_id = $1 AND cosmetic_id = ANY($2::text[])`,
+    [userId, cosmeticIds]
+  );
+  return rowCount;
 }

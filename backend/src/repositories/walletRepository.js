@@ -65,3 +65,33 @@ export async function listWalletTransactions(userId, { limit = 20, offset = 0, c
   );
   return rows;
 }
+
+export async function getLastPurchaseAmount({ userId, offerId }, client) {
+  if (!userId || !offerId) {
+    return null;
+  }
+
+  const executor = getExecutor(client);
+  const { rows } = await executor.query(
+    `SELECT amount
+     FROM wallet_transactions
+     WHERE user_id = $1
+       AND type = 'debit'
+       AND metadata ->> 'offerId' = $2
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId, offerId]
+  );
+
+  if (!rows[0]) {
+    return null;
+  }
+
+  const rawAmount = rows[0].amount;
+  const numeric = Number(rawAmount);
+  if (Number.isNaN(numeric) || numeric === 0) {
+    return null;
+  }
+
+  return Math.abs(numeric);
+}

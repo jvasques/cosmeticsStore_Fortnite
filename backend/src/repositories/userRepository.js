@@ -47,3 +47,22 @@ export async function updateDisplayName(userId, displayName, client) {
   );
   return rows[0] || null;
 }
+
+export async function listUsers({ limit = 50, offset = 0 } = {}) {
+  const safeLimit = Math.max(1, Math.min(limit, 200));
+  const safeOffset = Math.max(0, offset);
+  const { rows } = await pool.query(
+    `SELECT
+       u.id,
+       u.email,
+       u.display_name,
+       u.created_at,
+       COALESCE(w.balance, 0) AS balance
+     FROM users u
+     LEFT JOIN user_wallets w ON w.user_id = u.id
+     ORDER BY u.created_at DESC
+     LIMIT $1 OFFSET $2`,
+    [safeLimit, safeOffset]
+  );
+  return rows;
+}

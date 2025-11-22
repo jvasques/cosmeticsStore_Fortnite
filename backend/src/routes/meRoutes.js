@@ -156,10 +156,15 @@ router.post("/shop/purchase", purchaseShopOffer);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [cosmeticId]
  *             properties:
  *               cosmeticId:
  *                 type: string
+ *                 description: "Identificador único do item a ser vendido"
+ *               cosmeticIds:
+ *                 type: array
+ *                 description: "Lista de cosmeticIds. Obrigatória ao vender bundles (deve conter todos os itens do pacote)."
+ *                 items:
+ *                   type: string
  */
 router.post("/inventory/sell", sellInventoryItem);
 

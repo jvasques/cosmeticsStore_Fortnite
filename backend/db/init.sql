@@ -66,7 +66,13 @@ CREATE INDEX IF NOT EXISTS wallet_transactions_user_created_idx
 CREATE TABLE IF NOT EXISTS inventory_items (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     cosmetic_id TEXT NOT NULL REFERENCES cosmetics(id),
-    quantity INT NOT NULL DEFAULT 1,
+    offer_id TEXT,
     acquired_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, cosmetic_id)
 );
+
+ALTER TABLE inventory_items
+    DROP COLUMN IF EXISTS quantity;
+
+ALTER TABLE inventory_items
+    ADD COLUMN IF NOT EXISTS offer_id TEXT;

@@ -216,11 +216,11 @@ export async function getShopEntryById(offerId, client) {
 export async function getLatestPriceForCosmetic(cosmeticId, client) {
   const executor = client ?? pool;
   const { rows } = await executor.query(
-    `SELECT se.final_price, se.regular_price
+    `SELECT se.final_price, se.regular_price, se.is_bundle, se.offer_id
      FROM shop_entry_items sei
      JOIN shop_entries se ON se.offer_id = sei.offer_id
      WHERE sei.cosmetic_id = $1
-     ORDER BY se.in_date DESC NULLS LAST
+     ORDER BY se.is_bundle ASC, se.in_date DESC NULLS LAST, se.offer_id
      LIMIT 1`,
     [cosmeticId]
   );

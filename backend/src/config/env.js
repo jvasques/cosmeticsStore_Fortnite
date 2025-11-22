@@ -22,6 +22,12 @@ const env = {
     user: process.env.POSTGRES_USER || "fortnite",
     password: process.env.POSTGRES_PASSWORD || "fortnite",
   },
+  cors: {
+    allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "*")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  },
 };
 
 export default env;

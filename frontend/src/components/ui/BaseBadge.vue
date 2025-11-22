@@ -15,6 +15,7 @@ const variants = {
   success: "bg-accent-success/20 text-accent-success border border-accent-success/30",
   warning: "bg-accent-warning/20 text-accent-warning border border-accent-warning/30",
   neutral: "bg-white/10 text-white border border-white/10",
+  promo: "bg-rose-500/20 text-rose-100 border border-rose-400/30",
 };
 </script>
 

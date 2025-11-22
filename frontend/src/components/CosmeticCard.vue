@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import BaseBadge from "./ui/BaseBadge.vue";
 import BaseButton from "./ui/BaseButton.vue";
+import PriceTag from "./ui/PriceTag.vue";
 
 const props = defineProps({
   cosmetic: {
@@ -20,6 +21,26 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isPromo: {
+    type: Boolean,
+    default: false,
+  },
+  inCart: {
+    type: Boolean,
+    default: false,
+  },
+  purchasable: {
+    type: Boolean,
+    default: true,
+  },
+  price: {
+    type: Object,
+    default: null,
+  },
+  authLocked: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(["inspect", "add-to-cart"]);
@@ -27,6 +48,55 @@ const emit = defineEmits(["inspect", "add-to-cart"]);
 const cover = computed(() => props.cosmetic?.images?.icon ?? props.cosmetic?.images?.smallIcon);
 const rarity = computed(() => props.cosmetic?.rarity ?? props.cosmetic?.rarity_value ?? "common");
 const rarityKey = computed(() => `${rarity.value ?? "common"}`.toLowerCase());
+
+function normalizePriceValue(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+const finalPrice = computed(() => {
+  if (!props.price) {
+    return null;
+  }
+  return (
+    normalizePriceValue(props.price.finalPrice) ??
+    normalizePriceValue(props.price.final_price) ??
+    normalizePriceValue(props.price.regularPrice) ??
+    normalizePriceValue(props.price.regular_price) ??
+    null
+  );
+});
+
+const regularPrice = computed(() => {
+  if (!props.price) {
+    return null;
+  }
+  return (
+    normalizePriceValue(props.price.regularPrice) ??
+    normalizePriceValue(props.price.regular_price) ??
+    finalPrice.value
+  );
+});
+
+const showPriceTag = computed(() => finalPrice.value !== null && regularPrice.value !== null);
+const showPromoBadge = computed(() => {
+  if (props.isPromo) {
+    return true;
+  }
+  if (!showPriceTag.value) {
+    return false;
+  }
+  if (finalPrice.value === null || regularPrice.value === null) {
+    return false;
+  }
+  return finalPrice.value < regularPrice.value;
+});
 
 const rarityMap = {
   legendary: "from-amber-500/80 to-orange-500/40",
@@ -56,6 +126,8 @@ const rarityMap = {
       <div class="absolute left-3 top-3 flex flex-wrap gap-2">
         <BaseBadge v-if="props.isNew" variant="success">Novo</BaseBadge>
         <BaseBadge v-if="props.isOnSale" variant="warning">Loja</BaseBadge>
+        <BaseBadge v-if="showPromoBadge" variant="promo">Promoção</BaseBadge>
+        <BaseBadge v-if="props.inCart" variant="neutral">No carrinho</BaseBadge>
         <BaseBadge v-if="props.owned" variant="neutral">Adquirido</BaseBadge>
       </div>
     </div>
@@ -67,15 +139,32 @@ const rarityMap = {
         <p class="text-sm text-white/60 line-clamp-2">{{ props.cosmetic?.description }}</p>
       </div>
 
+      <div v-if="showPriceTag" class="flex justify-end">
+        <PriceTag :regular="regularPrice" :final="finalPrice" />
+      </div>
+
       <div class="flex items-center justify-between gap-3">
         <BaseButton variant="secondary" size="sm" @click="emit('inspect', props.cosmetic)">
           Detalhes
         </BaseButton>
         <BaseButton
+          v-if="props.purchasable || props.inCart"
           size="sm"
-          :disabled="props.owned"
-          @click="emit('add-to-cart', props.cosmetic)">
-          {{ props.owned ? 'No inventário' : 'Adicionar' }}
+          :disabled="props.owned || props.inCart || !props.purchasable || props.authLocked"
+          @click="emit('add-to-cart', props.cosmetic)"
+        >
+          <template v-if="props.owned">
+            No inventário
+          </template>
+          <template v-else-if="props.inCart">
+            No carrinho
+          </template>
+          <template v-else-if="props.authLocked">
+            Entre para comprar
+          </template>
+          <template v-else>
+            Adquirir
+          </template>
         </BaseButton>
       </div>
     </div>

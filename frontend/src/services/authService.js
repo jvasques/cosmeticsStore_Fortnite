@@ -15,7 +15,7 @@ export async function fetchProfile() {
   return data;
 }
 
-export async function fetchWallet() {
-  const { data } = await apiClient.get("/me/wallet");
+export async function fetchWallet(params = {}) {
+  const { data } = await apiClient.get("/me/wallet", { params });
   return data;
 }

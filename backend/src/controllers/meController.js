@@ -72,8 +72,10 @@ export async function purchaseShopOffer(req, res, next) {
 
 export async function sellInventoryItem(req, res, next) {
   try {
-    const cosmeticId = req.body?.cosmeticId;
-    const result = await sellCosmetic(req.user.id, cosmeticId);
+    const cosmeticIds = Array.isArray(req.body?.cosmeticIds)
+      ? req.body.cosmeticIds
+      : req.body?.cosmeticId ?? null;
+    const result = await sellCosmetic(req.user.id, cosmeticIds);
     res.status(200).json(result);
   } catch (error) {
     next(error);
