@@ -12,7 +12,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const cartStore = useCartStore();
 const walletAnimated = ref(authStore.balance ?? 0);
-const walletDisplay = computed(() => `${Math.round(walletAnimated.value).toLocaleString("pt-BR")} VB`);
+const walletDisplay = computed(() => `${Math.round(walletAnimated.value).toLocaleString("pt-BR")} `);
 
 const toastMessage = computed(() =>
   typeof cartStore.toast === "string" ? cartStore.toast : cartStore.toast?.message ?? ""
@@ -125,7 +125,8 @@ onBeforeUnmount(() => {
             <WalletIcon class="h-5 w-5 text-brand-light" />
             <div>
               <p class="text-xs uppercase tracking-[0.4em] text-white/50">Saldo</p>
-              <p class="text-lg font-black">{{ walletDisplay }}</p>
+              <p class="text-lg font-black">{{ walletDisplay }} <svg viewBox="0 0 24 24" class="w-[1em] h-[1em] inline-block text-[1.5rem] me-1" aria-hidden="true" data-testid="VBucksIcon"><path fill-rule="evenodd" clip-rule="evenodd" fill="currentColor" d="M12 22.5C17.799 22.5 22.5 17.799 22.5 12C22.5 6.20101 17.799 1.5 12 1.5C6.20101 1.5 1.5 6.20101 1.5 12C1.5 17.799 6.20101 22.5 12 22.5ZM10.1051 7.5H6L9.31376 16.5H14.6306L18 7.5H13.8887L12.0896 13.7038L12.0031 14.0427H11.9784L11.9042 13.7038L10.1051 7.5Z"></path></svg></p>
+              
             </div>
           </div>
           <BaseButton

@@ -26,27 +26,8 @@ onMounted(() => {
   loadAvailability();
 });
 
-const rarityOptions = computed(() => {
-  const unique = new Set();
-  catalogStore.cosmetics.forEach((item) => {
-    const rarity = item.rarity ?? item.rarity_value;
-    if (rarity) {
-      unique.add(rarity);
-    }
-  });
-  return Array.from(unique).sort((a, b) => a.localeCompare(b));
-});
-
-const typeOptions = computed(() => {
-  const unique = new Set();
-  catalogStore.cosmetics.forEach((item) => {
-    const type = item.type ?? item.type_value;
-    if (type) {
-      unique.add(type);
-    }
-  });
-  return Array.from(unique).sort((a, b) => a.localeCompare(b));
-});
+const rarityOptions = computed(() => catalogStore.availableRarities);
+const typeOptions = computed(() => catalogStore.availableTypes);
 
 const activeFilters = computed(() => {
   const f = catalogStore.filters;
@@ -366,7 +347,7 @@ function isInCart(cosmetic) {
           type="button"
           class="flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold transition"
           :class="catalogStore.filters.onlyNew ? 'border-brand-light/50 bg-brand-light/10 text-white' : 'border-white/10 bg-white/5 text-white/70'"
-          @click="catalogStore.filters.onlyNew = !catalogStore.filters.onlyNew"
+          @click="catalogStore.toggleFilter('onlyNew')"
         >
           <span class="inline-block h-2 w-2 rounded-full bg-emerald-400" />
           Novos
@@ -375,7 +356,7 @@ function isInCart(cosmetic) {
           type="button"
           class="flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold transition"
           :class="catalogStore.filters.onlyAvailable ? 'border-brand-light/50 bg-brand-light/10 text-white' : 'border-white/10 bg-white/5 text-white/70'"
-          @click="catalogStore.filters.onlyAvailable = !catalogStore.filters.onlyAvailable"
+          @click="catalogStore.toggleFilter('onlyAvailable')"
         >
           <span class="inline-block h-2 w-2 rounded-full bg-sky-400" />
           À venda
@@ -385,7 +366,7 @@ function isInCart(cosmetic) {
           type="button"
           class="flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-semibold transition"
           :class="catalogStore.filters.onlyPromo ? 'border-brand-light/50 bg-brand-light/10 text-white' : 'border-white/10 bg-white/5 text-white/70'"
-          @click="catalogStore.filters.onlyPromo = !catalogStore.filters.onlyPromo"
+          @click="catalogStore.toggleFilter('onlyPromo')"
         >
           <span class="inline-block h-2 w-2 rounded-full bg-amber-400" />
           Em promoção

@@ -669,8 +669,8 @@ onMounted(() => {
                 {{ linked.name ?? linked.cosmeticId ?? "Cosmético" }}
               </li>
             </ul>
-            <p v-if="sellScope.isBundle" class="text-xs text-red-300/80">
-              Este item veio de um bundle. A venda removerá todos os itens listados acima.
+            <p v-if="sellScope.isBundle" class="text-base text-white-300/80 bg-red-600 p-2 rounded-lg mt-2 text-center">
+              ⚠️ ATENÇÃO: Este item veio de um bundle. A venda afetará todos os itens listados acima.
             </p>
           </div>
 

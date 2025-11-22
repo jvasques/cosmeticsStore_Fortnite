@@ -244,8 +244,10 @@ export const useCatalogStore = defineStore("catalog", () => {
   const error = ref(null);
   const shopError = ref(null);
   const lastUpdated = ref(null);
-  const pagination = reactive({ limit: 20, page: 1, total: null, totalPages: null, hasMore: true });
+  const pagination = reactive({ limit: 21, page: 1, total: null, totalPages: null, hasMore: true });
   const availabilityIndex = ref({});
+  const availableRarities = ref([]);
+  const availableTypes = ref([]);
 
   const filters = reactive({
     search: "",
@@ -257,86 +259,127 @@ export const useCatalogStore = defineStore("catalog", () => {
     onlyPromo: false,
   });
 
+  let catalogRequestToken = 0;
+  let filterDebounceHandle = null;
+  let suppressFilterWatcher = false;
+
+  function buildCatalogQuery({ page, limit }) {
+    const query = {
+      limit,
+      offset: (page - 1) * limit,
+    };
+
+    const trimmedSearch = filters.search?.trim();
+    if (trimmedSearch) {
+      query.search = trimmedSearch;
+    }
+
+    if (filters.rarity && filters.rarity !== "all") {
+      query.rarity = filters.rarity;
+    }
+
+    if (filters.type && filters.type !== "all") {
+      query.type = filters.type;
+    }
+
+    if (filters.introduced.start) {
+      query.introducedStart = filters.introduced.start;
+    }
+
+    if (filters.introduced.end) {
+      query.introducedEnd = filters.introduced.end;
+    }
+
+    if (filters.onlyNew) {
+      query.onlyNew = true;
+    }
+
+    if (filters.onlyAvailable) {
+      query.onlyAvailable = true;
+    }
+
+    if (filters.onlyPromo) {
+      query.onlyPromo = true;
+    }
+
+    return query;
+  }
+
+  function scheduleFilterReload() {
+    if (filterDebounceHandle) {
+      clearTimeout(filterDebounceHandle);
+    }
+    filterDebounceHandle = setTimeout(() => {
+      loadCatalog({ reset: true, page: 1 });
+    }, 300);
+  }
+
   async function loadCatalog(options = {}) {
-    if (loading.value) {
-      return;
-    }
-
     const reset = options.reset ?? false;
-    const requestLimit = options.requestLimit ?? 100;
-    const targetPage = options.page ?? (reset ? 1 : pagination.page ?? 1);
-    const page = Math.max(1, targetPage);
+    const limit = options.limit ?? pagination.limit;
+    const basePage = reset ? 1 : pagination.page ?? 1;
+    const requestedPage = Math.max(1, options.page ?? basePage);
 
-    pagination.limit = options.limit ?? pagination.limit;
-    pagination.page = page;
-
-    if (reset) {
-      pagination.total = null;
-      pagination.totalPages = null;
-      pagination.hasMore = true;
-    }
+    const requestToken = ++catalogRequestToken;
 
     loading.value = true;
     error.value = null;
-    const aggregated = [];
-    let offset = 0;
-    let iterations = 0;
-    const maxIterations = options.maxIterations ?? 500;
-    let reportedTotal = null;
+
+    const query = buildCatalogQuery({ page: requestedPage, limit });
 
     try {
-      while (true) {
-        const response = await fetchCosmetics({ limit: requestLimit, offset });
-        const batch = Array.isArray(response)
-          ? response
-          : response.items ?? response.data ?? [];
-
-        if (!batch.length) {
-          break;
-        }
-
-        aggregated.push(...batch.map(normalizeCosmetic));
-        if (reportedTotal === null && typeof response.total === "number" && !Number.isNaN(response.total)) {
-          reportedTotal = response.total;
-        }
-        offset += requestLimit;
-        iterations += 1;
-
-        const reachedReportedTotal = typeof reportedTotal === "number" && aggregated.length >= reportedTotal;
-        const exhaustedBatch = batch.length < requestLimit;
-        const exceededGuard = iterations >= maxIterations;
-        const done = exhaustedBatch || reachedReportedTotal || exceededGuard;
-
-        if (done) {
-          break;
-        }
+      const response = await fetchCosmetics(query);
+      if (requestToken !== catalogRequestToken) {
+        return;
       }
 
-      if (aggregated.length) {
-        cosmetics.value = aggregated;
-      } else if (!cosmetics.value.length || reset) {
-        cosmetics.value = [];
-      }
+      const items = Array.isArray(response)
+        ? response
+        : response?.items ?? response?.data ?? [];
+      const total = typeof response?.total === "number" && !Number.isNaN(response.total)
+        ? response.total
+        : items.length;
 
-      pagination.total = cosmetics.value.length;
-      pagination.totalPages = Math.max(1, Math.ceil(Math.max(pagination.total, 1) / pagination.limit));
+      cosmetics.value = items.map(normalizeCosmetic);
+
+      pagination.limit = limit;
+      pagination.total = total;
+      pagination.totalPages = Math.max(1, Math.ceil(Math.max(total, 1) / limit));
+      pagination.page = Math.min(requestedPage, pagination.totalPages);
       pagination.hasMore = pagination.page < pagination.totalPages;
+
+      const facets = response?.facets ?? {};
+      availableRarities.value = Array.isArray(facets.allRarities)
+        ? facets.allRarities
+        : Array.isArray(facets.rarities)
+        ? facets.rarities
+        : [];
+      availableTypes.value = Array.isArray(facets.allTypes)
+        ? facets.allTypes
+        : Array.isArray(facets.types)
+        ? facets.types
+        : [];
 
       lastUpdated.value = new Date().toISOString();
     } catch (err) {
+      if (requestToken !== catalogRequestToken) {
+        return;
+      }
       error.value = err;
-      if (!cosmetics.value.length || reset) {
+      if (reset) {
         cosmetics.value = [];
         pagination.total = 0;
         pagination.totalPages = 1;
         pagination.hasMore = false;
       }
     } finally {
-      loading.value = false;
+      if (requestToken === catalogRequestToken) {
+        loading.value = false;
+      }
     }
   }
 
-  const bundlePagination = reactive({ limit: 20, page: 1, total: null, totalPages: null, hasMore: true });
+  const bundlePagination = reactive({ limit: 21, page: 1, total: null, totalPages: null, hasMore: true });
 
   async function loadShop(options = {}) {
     shopLoading.value = true;
@@ -383,69 +426,44 @@ export const useCatalogStore = defineStore("catalog", () => {
     }
   }
 
-  const filteredCosmetics = computed(() => {
-    const startDateValue = filters.introduced.start ? normalizeDateOnly(filters.introduced.start) : null;
-    const endDateValue = filters.introduced.end ? normalizeDateOnly(filters.introduced.end) : null;
+  const filteredCosmetics = computed(() => cosmetics.value);
 
-    return cosmetics.value.filter((item) => {
-      const matchesSearch = filters.search
-        ? String(item.name ?? "").toLowerCase().includes(filters.search.toLowerCase())
-        : true;
-      const matchesRarity = filters.rarity === "all" ? true : (item.rarity ?? item.rarity_value) === filters.rarity;
-      const matchesType = filters.type === "all" ? true : (item.type ?? item.type_value) === filters.type;
-      const itemDateValue = item.added_date_value ?? (item.introduced_at ? item.introduced_at.slice(0, 10) : null);
-      const matchesIntroWindow = startDateValue || endDateValue
-        ? itemDateValue && (!startDateValue || itemDateValue >= startDateValue) && (!endDateValue || itemDateValue <= endDateValue)
-        : true;
-      const matchesNew = filters.onlyNew ? Boolean(item.is_new ?? item.isNew) : true;
-      const offer = availabilityIndex.value[item.id];
-      const matchesAvailable = filters.onlyAvailable ? Boolean(offer) : true;
-      const isPromoOffer = detectPromoFromOffer(offer);
-      const matchesPromo = filters.onlyPromo ? Boolean(offer) && isPromoOffer : true;
+  const filteredCount = computed(() => pagination.total ?? cosmetics.value.length);
 
-      return (
-        matchesSearch &&
-        matchesRarity &&
-        matchesType &&
-        matchesIntroWindow &&
-        matchesNew &&
-        matchesAvailable &&
-        matchesPromo
-      );
-    });
-  });
-
-  const filteredCount = computed(() => filteredCosmetics.value.length);
-
-  const paginatedCosmetics = computed(() => {
-    const start = (pagination.page - 1) * pagination.limit;
-    return filteredCosmetics.value.slice(start, start + pagination.limit);
-  });
+  const paginatedCosmetics = computed(() => cosmetics.value);
 
   watch(
-    () => [filteredCount.value, pagination.limit],
+    filters,
     () => {
-      const total = filteredCount.value;
-      pagination.total = total;
-      pagination.totalPages = Math.max(1, Math.ceil(Math.max(total, 1) / pagination.limit));
-      if (pagination.page > pagination.totalPages) {
-        pagination.page = pagination.totalPages;
+      if (suppressFilterWatcher) {
+        suppressFilterWatcher = false;
+        return;
       }
-      pagination.hasMore = pagination.page < pagination.totalPages;
+      pagination.page = 1;
+      scheduleFilterReload();
     },
-    { immediate: true }
+    { deep: true }
   );
 
   const promoBundles = computed(() => bundles.value.filter((bundle) => bundle.finalPrice < bundle.regularPrice));
 
-  function setFilter(key, value) {
+  function setFilter(key, value, { immediate = false } = {}) {
     if (key === "introduced" && typeof value === "object") {
       filters.introduced = { ...filters.introduced, ...value };
       pagination.page = 1;
+      if (immediate) {
+        suppressFilterWatcher = true;
+        loadCatalog({ reset: true, page: 1 });
+        return;
+      }
       return;
     }
     filters[key] = value;
     pagination.page = 1;
+    if (immediate) {
+      suppressFilterWatcher = true;
+      loadCatalog({ reset: true, page: 1 });
+    }
   }
 
   function resetFilters() {
@@ -458,6 +476,8 @@ export const useCatalogStore = defineStore("catalog", () => {
     filters.onlyAvailable = false;
     filters.onlyPromo = false;
     pagination.page = 1;
+    suppressFilterWatcher = true;
+    loadCatalog({ reset: true, page: 1 });
   }
 
   function setAvailability(index = {}) {
@@ -470,7 +490,17 @@ export const useCatalogStore = defineStore("catalog", () => {
 
   function goToPage(page) {
     const target = Math.max(1, Math.min(page, pagination.totalPages ?? 1));
-    pagination.page = target;
+    loadCatalog({ page: target });
+  }
+
+  function toggleFilter(key) {
+    if (!(key in filters)) {
+      return;
+    }
+    suppressFilterWatcher = true;
+    filters[key] = !filters[key];
+    pagination.page = 1;
+    loadCatalog({ reset: true, page: 1 });
   }
 
   return {
@@ -484,6 +514,8 @@ export const useCatalogStore = defineStore("catalog", () => {
     paginatedCosmetics,
     promoBundles,
     availabilityIndex,
+    availableRarities,
+    availableTypes,
     loading,
     shopLoading,
     error,
@@ -496,5 +528,6 @@ export const useCatalogStore = defineStore("catalog", () => {
     setAvailability,
     getAvailabilityById,
     goToPage,
+    toggleFilter,
   };
 });

@@ -321,7 +321,6 @@ const resolveDate = (tx) => {
 const resolveAmount = (tx) => Number(tx.amount ?? tx.value ?? 0);
 
 const formatAmount = (tx) => resolveAmount(tx).toLocaleString("pt-BR") + " VB";
-const formatAbsoluteAmount = (tx) => Math.abs(resolveAmount(tx)).toLocaleString("pt-BR") + " VB";
 
 const resolveApiDescription = (tx = {}) =>
   pickFirst(

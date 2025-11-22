@@ -28,7 +28,7 @@ const savings = computed(() => {
   <div class="flex flex-col text-right text-white">
     <div class="text-xs uppercase tracking-[0.3em] text-white/60">{{ props.currency }}</div>
     <div class="flex items-baseline gap-2">
-      <span class="text-2xl font-black">{{ props.final.toLocaleString() }}</span>
+      <span class="text-2xl font-black"> {{ props.final.toLocaleString() }}</span>
       <span
         v-if="props.regular !== props.final"
         class="text-sm font-semibold text-white/50 line-through"
