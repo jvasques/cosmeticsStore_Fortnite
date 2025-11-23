@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
-import { WalletIcon, ArrowRightOnRectangleIcon } from "@heroicons/vue/24/outline";
+import { WalletIcon, ArrowRightOnRectangleIcon, ShoppingCartIcon } from "@heroicons/vue/24/outline";
 import BaseButton from "../components/ui/BaseButton.vue";
 import CartDrawer from "../components/CartDrawer.vue";
 import { useAuthStore } from "../stores/authStore.js";
@@ -86,6 +86,12 @@ const links = computed(() =>
 
 const isAuthRoute = computed(() => route.name === "auth");
 
+const canShowCartDrawer = computed(
+  () => !isAuthRoute.value && authStore.isAuthenticated && cartStore.items.length > 0
+);
+
+const isMobileCartOpen = ref(false);
+
 function goToAuth() {
   router.push({ name: "auth" });
 }
@@ -95,9 +101,35 @@ function logout() {
   goToAuth();
 }
 
+function openCartDrawer() {
+  if (canShowCartDrawer.value) {
+    isMobileCartOpen.value = true;
+  }
+}
+
+function closeCartDrawer() {
+  isMobileCartOpen.value = false;
+}
+
 onBeforeUnmount(() => {
   walletAnimationCancel?.();
 });
+
+watch(
+  () => cartStore.items.length,
+  (next) => {
+    if (!next) {
+      isMobileCartOpen.value = false;
+    }
+  }
+);
+
+watch(
+  () => route.fullPath,
+  () => {
+    isMobileCartOpen.value = false;
+  }
+);
 </script>
 
 <template>
@@ -152,11 +184,21 @@ onBeforeUnmount(() => {
         <main :class="['space-y-8', isAuthRoute ? 'w-full max-w-3xl' : '']">
           <slot />
         </main>
-        <CartDrawer
-          v-if="!isAuthRoute && authStore.isAuthenticated && cartStore.items.length"
-          class="hidden xl:flex"
-        />
+        <CartDrawer v-if="canShowCartDrawer" class="hidden xl:flex" />
       </section>
+
+      <transition name="scale-fade">
+        <BaseButton
+          v-if="canShowCartDrawer"
+          key="cart-fab"
+          class="fixed bottom-28 right-5 z-40 shadow-card xl:hidden"
+          size="lg"
+          @click="openCartDrawer"
+        >
+          <ShoppingCartIcon class="h-5 w-5" />
+          Carrinho ({{ cartStore.items.length }})
+        </BaseButton>
+      </transition>
 
       <transition name="fade">
         <div
@@ -169,6 +211,22 @@ onBeforeUnmount(() => {
       </transition>
     </div>
   </div>
+
+  <transition name="drawer">
+    <div
+      v-if="isMobileCartOpen && canShowCartDrawer"
+      class="fixed inset-0 z-40 flex items-end justify-center px-4 pb-6 pt-24 xl:hidden"
+    >
+      <button
+        class="absolute inset-0 bg-black/70"
+        type="button"
+        aria-label="Fechar carrinho"
+        @click="closeCartDrawer"
+      />
+      <CartDrawer class="relative w-full max-w-md rounded-3xl bg-[#04050a]" />
+    </div>
+  </transition>
+
   <footer
     class="fixed bottom-0 left-0 w-full border-t border-white/10 bg-[#04050a]/95 py-4 text-center text-sm text-white/70 backdrop-blur"
   >
@@ -187,5 +245,23 @@ onBeforeUnmount(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+.drawer-enter-from,
+.drawer-leave-to {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.scale-fade-enter-active,
+.scale-fade-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+.scale-fade-enter-from,
+.scale-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 </style>

@@ -64,14 +64,16 @@ const formattedUpdatedAt = computed(() => {
   <section class="space-y-6">
     <header class="glass-panel px-6 py-4">
       <p class="text-xs uppercase tracking-[0.4em] text-white/50">Transações</p>
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 class="text-3xl font-black text-white">Histórico e saldo</h1>
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="space-y-1">
+          <h1 class="text-2xl font-black text-white sm:text-3xl">Histórico e saldo</h1>
           <p class="text-sm text-white/60">Atualizado em: {{ formattedUpdatedAt }}</p>
         </div>
-        <div class="text-right">
+        <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left sm:text-right">
           <p class="text-xs uppercase tracking-[0.4em] text-white/50">Saldo atual</p>
-          <p class="text-3xl font-black text-brand-light">{{ balance.toLocaleString("pt-BR") }} VB</p>
+          <p class="text-2xl font-black text-brand-light sm:text-3xl">
+            {{ balance.toLocaleString("pt-BR") }} VB
+          </p>
         </div>
       </div>
     </header>
@@ -90,7 +92,7 @@ const formattedUpdatedAt = computed(() => {
         <BaseButton variant="secondary" @click="loadTransactions">Tentar novamente</BaseButton>
       </div>
       <div v-else class="space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p class="text-sm text-white/60">Últimas {{ transactions.length }} transações</p>
           <BaseButton
             variant="secondary"
