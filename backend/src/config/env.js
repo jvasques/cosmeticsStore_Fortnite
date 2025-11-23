@@ -28,6 +28,8 @@ const env = {
       .map((origin) => origin.trim())
       .filter(Boolean),
   },
+  syncCronSchedule: process.env.SYNC_CRON_SCHEDULE || "0 3 * * *",
+  syncCronTimezone: process.env.SYNC_CRON_TZ || "America/Sao_Paulo",
 };
 
 export default env;
