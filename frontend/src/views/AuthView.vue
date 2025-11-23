@@ -167,7 +167,7 @@ async function submit() {
       <div v-if="submitError" class="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
         {{ submitError }}
       </div>
-      <BaseButton :loading="authStore.loading" class="w-full">Continuar</BaseButton>
+      <BaseButton :loading="authStore.loading" class="w-full">{{ mode === 'login' ? 'Entrar' : 'Registrar' }}</BaseButton>
     </form>
 
       <p class="text-center text-sm text-white/60">

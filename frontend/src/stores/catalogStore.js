@@ -183,31 +183,6 @@ function normalizeDateOnly(value) {
   return parsed.toISOString().slice(0, 10);
 }
 
-function normalizePriceNumber(value) {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
-}
-
-function detectPromoFromOffer(offer) {
-  if (!offer) {
-    return false;
-  }
-  if (typeof offer.isPromo === "boolean") {
-    return offer.isPromo;
-  }
-  const final = normalizePriceNumber(offer.finalPrice ?? offer.final_price ?? offer.price ?? offer.cost);
-  const regular = normalizePriceNumber(
-    offer.regularPrice ?? offer.regular_price ?? offer.basePrice ?? offer.originalPrice ?? final,
-  );
-  if (final === null || regular === null) {
-    return false;
-  }
-  return final < regular;
-}
-
 function normalizeCosmetic(item = {}) {
   const normalizedImages = {
     icon: item.images?.icon ?? item.image_icon ?? item.images?.Icon ?? null,

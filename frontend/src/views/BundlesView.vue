@@ -92,14 +92,6 @@ function backToBundleDetails() {
           <h1 class="text-3xl font-black text-white">Ofertas da loja</h1>
           <p class="text-sm text-white/60">{{ bundleCount }} bundles ativos</p>
         </div>
-        <BaseButton
-          variant="secondary"
-          size="sm"
-          :disabled="catalogStore.shopLoading"
-          @click="catalogStore.loadShop({ bundle: true, limit: catalogStore.bundlePagination.limit, page: catalogStore.bundlePagination.page })"
-        >
-          {{ catalogStore.shopLoading ? "Atualizando..." : "Recarregar" }}
-        </BaseButton>
       </div>
     </header>
 

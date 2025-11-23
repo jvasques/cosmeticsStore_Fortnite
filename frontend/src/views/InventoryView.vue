@@ -94,7 +94,12 @@ const gatherTransactionOfferIds = (transaction) => {
     if (!entry) {
       return;
     }
-    push(entry.offerId ?? entry.offer_id ?? entry.bundleOfferId ?? entry.bundle_offer_id);
+    push(
+      entry.offerId ??
+        entry.offer_id ??
+        entry.bundleOfferId ??
+        entry.bundle_offer_id
+    );
   });
 
   return offers;
@@ -124,7 +129,9 @@ const gatherTransactionCosmeticIds = (transaction) => {
     if (!entry) {
       return;
     }
-    push(entry.cosmeticId ?? entry.cosmetic_id ?? entry.itemId ?? entry.item_id);
+    push(
+      entry.cosmeticId ?? entry.cosmetic_id ?? entry.itemId ?? entry.item_id
+    );
   });
 
   return ids;
@@ -147,7 +154,11 @@ const isPurchaseTransaction = (transaction) => {
     .map((value) => value?.toString?.().toLowerCase?.())
     .filter(Boolean);
 
-  if (typeCandidates.some((entry) => purchaseKeywords.some((keyword) => entry.includes(keyword)))) {
+  if (
+    typeCandidates.some((entry) =>
+      purchaseKeywords.some((keyword) => entry.includes(keyword))
+    )
+  ) {
     return true;
   }
 
@@ -158,7 +169,7 @@ const isPurchaseTransaction = (transaction) => {
       transaction.total ??
       transaction.price ??
       transaction.finalPrice ??
-      transaction.final_price,
+      transaction.final_price
   );
   if (typeof amount === "number" && amount < 0) {
     return true;
@@ -189,7 +200,9 @@ const resolveTransactionAmount = (transaction) => {
       return Math.abs(candidate);
     }
   }
-  const metadataAmount = coerceNumber(transaction.metadata?.amount ?? transaction.metadata?.value);
+  const metadataAmount = coerceNumber(
+    transaction.metadata?.amount ?? transaction.metadata?.value
+  );
   if (metadataAmount !== null) {
     return Math.abs(metadataAmount);
   }
@@ -206,7 +219,9 @@ const resolveTransactionCurrency = (transaction) => {
     transaction.metadata?.currency,
     transaction.metadata?.walletCurrency,
   ];
-  return keys.find((value) => typeof value === "string" && value.trim()) ?? "VB";
+  return (
+    keys.find((value) => typeof value === "string" && value.trim()) ?? "VB"
+  );
 };
 
 const formatTransactionLabel = (transaction) => {
@@ -219,9 +234,21 @@ const formatTransactionLabel = (transaction) => {
     transaction.transaction_type ??
     transaction.kind ??
     "Transação";
-  const id = transaction.id ?? transaction.transactionId ?? transaction.transaction_id ?? transaction.reference ?? null;
-  const createdAt = transaction.createdAt ?? transaction.created_at ?? transaction.date ?? transaction.timestamp ?? null;
-  const stamp = createdAt ? dateTimeFormatter.format(new Date(createdAt)) : null;
+  const id =
+    transaction.id ??
+    transaction.transactionId ??
+    transaction.transaction_id ??
+    transaction.reference ??
+    null;
+  const createdAt =
+    transaction.createdAt ??
+    transaction.created_at ??
+    transaction.date ??
+    transaction.timestamp ??
+    null;
+  const stamp = createdAt
+    ? dateTimeFormatter.format(new Date(createdAt))
+    : null;
   return [type, id, stamp].filter(Boolean).join(" · ");
 };
 
@@ -245,7 +272,9 @@ const resolveLineItemAmount = (entry = {}) => {
       return Math.abs(candidate);
     }
   }
-  const metaAmount = coerceNumber(entry.metadata?.amount ?? entry.metadata?.value ?? entry.metadata?.total);
+  const metaAmount = coerceNumber(
+    entry.metadata?.amount ?? entry.metadata?.value ?? entry.metadata?.total
+  );
   if (metaAmount !== null) {
     return Math.abs(metaAmount);
   }
@@ -261,7 +290,7 @@ const resolveEntryOfferKey = (entry = {}) =>
       entry.entryOfferId ??
       entry.entry_offer_id ??
       entry.metadata?.offerId ??
-      entry.metadata?.offer_id,
+      entry.metadata?.offer_id
   );
 
 const resolveEntryCosmeticKey = (entry = {}) =>
@@ -273,7 +302,7 @@ const resolveEntryCosmeticKey = (entry = {}) =>
       entry.templateId ??
       entry.template_id ??
       entry.metadata?.cosmeticId ??
-      entry.metadata?.cosmetic_id,
+      entry.metadata?.cosmetic_id
   );
 
 const collectMatchingLineItems = (scope, transaction = {}) => {
@@ -297,10 +326,10 @@ const collectMatchingLineItems = (scope, transaction = {}) => {
             item.item_id ??
             item.templateId ??
             item.template_id ??
-            item.id,
-        ),
+            item.id
+        )
       )
-      .filter(Boolean),
+      .filter(Boolean)
   );
 
   return entries.filter((entry) => {
@@ -308,7 +337,8 @@ const collectMatchingLineItems = (scope, transaction = {}) => {
     const entryCosmeticKey = resolveEntryCosmeticKey(entry);
     const matchesOffer = scopeOfferKey && entryOfferKey === scopeOfferKey;
     const matchesBundle = scopeBundleKey && entryOfferKey === scopeBundleKey;
-    const matchesCosmetic = entryCosmeticKey && scopeCosmeticKeys.has(entryCosmeticKey);
+    const matchesCosmetic =
+      entryCosmeticKey && scopeCosmeticKeys.has(entryCosmeticKey);
     return matchesOffer || matchesBundle || matchesCosmetic;
   });
 };
@@ -346,10 +376,10 @@ const findRelatedTransaction = (scope, transactions = []) => {
             item.item_id ??
             item.templateId ??
             item.template_id ??
-            item.id,
-        ),
+            item.id
+        )
       )
-      .filter(Boolean),
+      .filter(Boolean)
   );
 
   let fallback = null;
@@ -385,10 +415,25 @@ const formatAmount = (amount, currency = "VB") => {
 
 const buildSellPayload = (scope, transaction, amount, currency) => {
   const cosmeticIds = (scope.linkedItems ?? [])
-    .map((item) => item.cosmeticId ?? item.cosmetic_id ?? item.itemId ?? item.item_id ?? item.templateId ?? item.template_id)
+    .map(
+      (item) =>
+        item.cosmeticId ??
+        item.cosmetic_id ??
+        item.itemId ??
+        item.item_id ??
+        item.templateId ??
+        item.template_id
+    )
     .filter(Boolean);
   const inventoryIds = (scope.linkedItems ?? [])
-    .map((item) => item.inventoryId ?? item.inventory_id ?? item.userCosmeticId ?? item.user_cosmetic_id ?? item.id)
+    .map(
+      (item) =>
+        item.inventoryId ??
+        item.inventory_id ??
+        item.userCosmeticId ??
+        item.user_cosmetic_id ??
+        item.id
+    )
     .filter(Boolean);
   const matchingEntries = collectMatchingLineItems(scope, transaction);
 
@@ -412,7 +457,10 @@ const buildSellPayload = (scope, transaction, amount, currency) => {
         name: entry.name ?? entry.title ?? null,
       })),
     },
-    transactionId: transaction?.id ?? transaction?.transactionId ?? transaction?.transaction_id,
+    transactionId:
+      transaction?.id ??
+      transaction?.transactionId ??
+      transaction?.transaction_id,
     amountPaid: amount ?? undefined,
     currency,
   };
@@ -449,19 +497,31 @@ const sellState = reactive({
   success: null,
 });
 const walletTransactions = computed(() => authStore.wallet?.transactions ?? []);
-const sellScope = computed(() => (sellTarget.value ? inventoryStore.buildSellScope(sellTarget.value) : null));
+const sellScope = computed(() =>
+  sellTarget.value ? inventoryStore.buildSellScope(sellTarget.value) : null
+);
 const sellLinkedItems = computed(() => sellScope.value?.linkedItems ?? []);
 const sellTransaction = computed(() =>
-  sellScope.value ? findRelatedTransaction(sellScope.value, walletTransactions.value) : null,
+  sellScope.value
+    ? findRelatedTransaction(sellScope.value, walletTransactions.value)
+    : null
 );
-const sellAmountValue = computed(() => resolveSellAmount(sellScope.value, sellTransaction.value));
-const sellCurrency = computed(() => resolveTransactionCurrency(sellTransaction.value));
-const sellAmountLabel = computed(() => formatAmount(sellAmountValue.value, sellCurrency.value));
-const sellModalTitle = computed(() => (sellScope.value?.isBundle ? "Vender bundle" : "Vender item"));
+const sellAmountValue = computed(() =>
+  resolveSellAmount(sellScope.value, sellTransaction.value)
+);
+const sellCurrency = computed(() =>
+  resolveTransactionCurrency(sellTransaction.value)
+);
+const sellAmountLabel = computed(() =>
+  formatAmount(sellAmountValue.value, sellCurrency.value)
+);
+const sellModalTitle = computed(() =>
+  sellScope.value?.isBundle ? "Vender bundle" : "Vender item"
+);
 const sellModalDescription = computed(() =>
   sellScope.value?.isBundle
     ? "Todos os itens vinculados serão removidos do seu inventário."
-    : "O item será removido e o backend creditará a venda na sua carteira.",
+    : "O item será removido e o backend creditará a venda na sua carteira."
 );
 
 const resetSellState = () => {
@@ -542,7 +602,7 @@ async function confirmSell() {
     sellScope.value,
     sellTransaction.value,
     sellAmountValue.value,
-    sellCurrency.value,
+    sellCurrency.value
   );
   if (!payload.cosmeticIds.length && !payload.inventoryIds.length) {
     sellState.error = "Não conseguimos identificar o item no inventário.";
@@ -590,21 +650,41 @@ onMounted(() => {
     <header class="glass-panel px-6 py-4">
       <p class="text-xs uppercase tracking-[0.4em] text-white/50">Inventário</p>
       <h1 class="text-3xl font-black text-white">Seus itens</h1>
-      <p class="text-sm text-white/60"> {{ itensCount }} itens adquiridos.</p>
+      <p class="text-sm text-white/60">{{ itensCount }} itens adquiridos.</p>
     </header>
 
-    <div v-if="!isAuthenticated" class="glass-panel space-y-4 px-6 py-8 text-center">
-      <p class="text-white/80">Entre para sincronizar seu inventário com o banco de dados.</p>
-      <BaseButton @click="router.push({ name: 'auth' })">Fazer login</BaseButton>
+    <div
+      v-if="!isAuthenticated"
+      class="glass-panel space-y-4 px-6 py-8 text-center"
+    >
+      <p class="text-white/80">
+        Entre para sincronizar seu inventário com o banco de dados.
+      </p>
+      <BaseButton @click="router.push({ name: 'auth' })"
+        >Fazer login</BaseButton
+      >
     </div>
 
     <div v-else>
-      <div v-if="inventoryStore.loading" class="glass-panel px-6 py-8 text-center text-white/70">Carregando inventário...</div>
-      <div v-else-if="inventoryStore.error" class="glass-panel space-y-4 px-6 py-8 text-center">
-        <p class="text-white">Não foi possível carregar seu inventário.</p>
-        <BaseButton variant="secondary" @click="loadInventory">Tentar novamente</BaseButton>
+      <div
+        v-if="inventoryStore.loading"
+        class="glass-panel px-6 py-8 text-center text-white/70"
+      >
+        Carregando inventário...
       </div>
-      <div v-else-if="!inventoryStore.items.length" class="glass-panel px-6 py-8 text-center text-white/70">
+      <div
+        v-else-if="inventoryStore.error"
+        class="glass-panel space-y-4 px-6 py-8 text-center"
+      >
+        <p class="text-white">Não foi possível carregar seu inventário.</p>
+        <BaseButton variant="secondary" @click="loadInventory"
+          >Tentar novamente</BaseButton
+        >
+      </div>
+      <div
+        v-else-if="!inventoryStore.items.length"
+        class="glass-panel px-6 py-8 text-center text-white/70"
+      >
         Nenhum item no inventário ainda.
       </div>
       <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -631,22 +711,37 @@ onMounted(() => {
           />
           <div class="space-y-4">
             <div class="flex flex-wrap gap-2">
-              <BaseBadge v-if="inspectItem.is_new || inspectItem.isNew" variant="success">Novo</BaseBadge>
-              <BaseBadge v-if="(inspectItem.metadata?.originType ?? inspectItem.origin) === 'bundle'" variant="warning">
+              <BaseBadge
+                v-if="inspectItem.is_new || inspectItem.isNew"
+                variant="success"
+                >Novo</BaseBadge
+              >
+              <BaseBadge
+                v-if="
+                  (inspectItem.metadata?.originType ?? inspectItem.origin) ===
+                  'bundle'
+                "
+                variant="warning"
+              >
                 Bundle
               </BaseBadge>
             </div>
             <header>
               <p class="text-xs uppercase tracking-[0.4em] text-white/50">
-                {{ resolveRarity(inspectItem) }} · {{ resolveType(inspectItem) }}
+                {{ resolveRarity(inspectItem) }} ·
+                {{ resolveType(inspectItem) }}
               </p>
-              <h2 class="text-3xl font-black text-white">{{ inspectItem.name }}</h2>
+              <h2 class="text-3xl font-black text-white">
+                {{ inspectItem.name }}
+              </h2>
             </header>
             <p class="text-white/70">
               {{ resolveDescription(inspectItem) }}
             </p>
             <div class="flex flex-wrap justify-end gap-3">
-              <BaseButton variant="secondary" @click="closeDetails">Fechar</BaseButton>
+              <BaseButton variant="secondary" @click="closeDetails"
+                >Fechar</BaseButton
+              >
             </div>
           </div>
         </div>
@@ -657,45 +752,80 @@ onMounted(() => {
       <template v-if="sellScope">
         <div class="space-y-6">
           <header>
-            <p class="text-xs uppercase tracking-[0.4em] text-white/50">{{ sellModalTitle }}</p>
-            <h2 class="text-3xl font-black text-white">{{ sellScope.target?.name ?? "Cosmético" }}</h2>
+            <p class="text-xs uppercase tracking-[0.4em] text-white/50">
+              {{ sellModalTitle }}
+            </p>
+            <h2 class="text-3xl font-black text-white">
+              {{ sellScope.target?.name ?? "Cosmético" }}
+            </h2>
             <p class="text-sm text-white/70">{{ sellModalDescription }}</p>
           </header>
 
-          <div class="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
-            <p class="text-xs uppercase tracking-[0.4em] text-white/50">Itens afetados</p>
+          <div
+            class="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4"
+          >
+            <p class="text-xs uppercase tracking-[0.4em] text-white/50">
+              Itens afetados
+            </p>
             <ul class="space-y-1 text-sm text-white/80">
               <li v-for="linked in sellLinkedItems" :key="resolveKey(linked)">
                 {{ linked.name ?? linked.cosmeticId ?? "Cosmético" }}
               </li>
             </ul>
-            <p v-if="sellScope.isBundle" class="text-base text-white-300/80 bg-red-600 p-2 rounded-lg mt-2 text-center">
-              ⚠️ ATENÇÃO: Este item veio de um bundle. A venda afetará todos os itens listados acima.
+            <p
+              v-if="sellScope.isBundle"
+              class="text-base text-white-300/80 bg-red-600 p-2 rounded-lg mt-2 text-center"
+            >
+              ⚠️ ATENÇÃO: Este item veio de um bundle. A venda afetará todos os
+              itens listados acima.
             </p>
           </div>
 
-          <div class="space-y-2 rounded-3xl border border-white/10 bg-white/5 p-4">
-            <p class="text-xs uppercase tracking-[0.4em] text-white/50">Resumo financeiro</p>
-            <p v-if="sellAmountLabel" class="text-lg font-semibold text-white">Pagou {{ sellAmountLabel }}</p>
+          <div
+            class="space-y-2 rounded-3xl border border-white/10 bg-white/5 p-4"
+          >
+            <p class="text-xs uppercase tracking-[0.4em] text-white/50">
+              Resumo financeiro
+            </p>
+            <p v-if="sellAmountLabel" class="text-lg font-semibold text-white">
+              Pagou {{ sellAmountLabel }}
+            </p>
             <p v-else class="text-sm text-white/70">
-              Não encontramos a transação original. Prosseguir com a venda solicitará validação do backend.
+              Não encontramos a transação original. Prosseguir com a venda
+              solicitará validação do backend.
             </p>
-            <p v-if="sellTransaction" class="text-xs text-white/50">{{ formatTransactionLabel(sellTransaction) }}</p>
+            <p v-if="sellTransaction" class="text-xs text-white/50">
+              {{ formatTransactionLabel(sellTransaction) }}
+            </p>
           </div>
 
-          <p v-if="sellState.error" class="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+          <p
+            v-if="sellState.error"
+            class="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100"
+          >
             {{ sellState.error }}
           </p>
-          <p v-if="sellState.success" class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+          <p
+            v-if="sellState.success"
+            class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
+          >
             {{ sellState.success }}
           </p>
-          <p v-if="sellState.refreshingWallet" class="text-xs text-white/60">Carregando transações recentes...</p>
+          <p v-if="sellState.refreshingWallet" class="text-xs text-white/60">
+            Carregando transações recentes...
+          </p>
 
-          <div class="flex flex-wrap justify-end gap-3">
-            <BaseButton variant="secondary" :disabled="sellState.processing" @click="closeSellModal">Cancelar</BaseButton>
+          <div v-if="sellState.success !== 'Venda registrada com sucesso.'" class="flex flex-wrap justify-end gap-3">
+            <BaseButton
+              variant="secondary"
+              :disabled="sellState.processing"
+              @click="closeSellModal"
+              >Cancelar</BaseButton
+            >
             <BaseButton :disabled="sellState.processing" @click="confirmSell">
-              <span v-if="sellState.processing">Processando...</span>
-              <span v-else>Confirmar venda</span>
+              <span class="inline-block min-w-[6.5rem]">
+                {{ sellState.processing ? "Processando…" : "Confirmar venda" }}
+              </span>
             </BaseButton>
           </div>
         </div>

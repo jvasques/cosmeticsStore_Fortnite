@@ -23,7 +23,7 @@ const baseClasses =
 
 const variants = {
   primary:
-    "bg-brand text-white hover:bg-brand-dark active:bg-brand-dark shadow-[0_8px_25px_rgba(109,74,255,0.35)]",
+    "bg-brand text-[#292C2B] hover:bg-brand-dark active:bg-brand-dark shadow-[0_8px_25px_rgba(51,204,153,0.35)]",
   secondary:
     "bg-white/10 text-white hover:bg-white/20 border border-white/10 shadow-[0_8px_20px_rgba(0,0,0,0.25)]",
   ghost: "bg-transparent text-white hover:bg-white/10",
