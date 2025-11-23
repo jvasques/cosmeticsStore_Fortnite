@@ -219,7 +219,7 @@ export const useCatalogStore = defineStore("catalog", () => {
   const error = ref(null);
   const shopError = ref(null);
   const lastUpdated = ref(null);
-  const pagination = reactive({ limit: 21, page: 1, total: null, totalPages: null, hasMore: true });
+  const pagination = reactive({ limit: 18, page: 1, total: null, totalPages: null, hasMore: true });
   const availabilityIndex = ref({});
   const availableRarities = ref([]);
   const availableTypes = ref([]);
@@ -354,7 +354,7 @@ export const useCatalogStore = defineStore("catalog", () => {
     }
   }
 
-  const bundlePagination = reactive({ limit: 21, page: 1, total: null, totalPages: null, hasMore: true });
+  const bundlePagination = reactive({ limit: 20, page: 1, total: null, totalPages: null, hasMore: true });
 
   async function loadShop(options = {}) {
     shopLoading.value = true;

@@ -16,7 +16,6 @@ function coerceNumber(value) {
       return null;
     }
 
-    // Remove currency symbols/letters while keeping separators.
     let normalized = trimmed.replace(/[^0-9.,-]/g, "");
     const thousandDotPattern = /^\d{1,3}(\.\d{3})+(,\d+)?$/;
     const thousandCommaPattern = /^\d{1,3}(,\d{3})+(\.\d+)?$/;
@@ -157,6 +156,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const { token: authToken, user: profile } = await loginUser(credentials);
       token.value = authToken;
+      setAuthToken(authToken);
       user.value = profile;
       await hydrate();
       return profile;
@@ -170,6 +170,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const { token: authToken, user: profile } = await registerUser(payload);
       token.value = authToken;
+      setAuthToken(authToken);
       user.value = profile;
       await hydrate();
       return profile;
