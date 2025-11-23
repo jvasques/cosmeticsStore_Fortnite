@@ -1,14 +1,10 @@
 import env from "../config/env.js";
-import { syncCosmetics } from "../services/cosmeticsSyncService.js";
-import { syncNewCosmetics } from "../services/newCosmeticsService.js";
-import { syncShopEntries } from "../services/shopSyncService.js";
+import { runFullSync } from "../services/fullSyncService.js";
 import pool from "../db/pool.js";
 
 (async () => {
   try {
-    const cosmeticsResult = await syncCosmetics();
-    const newResult = await syncNewCosmetics();
-    const shopResult = await syncShopEntries();
+    const { cosmeticsResult, newResult, shopResult } = await runFullSync();
     console.log(
       `Processados ${cosmeticsResult.inserted} itens a partir da API ${env.fortniteApiUrl}`
     );

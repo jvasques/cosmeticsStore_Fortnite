@@ -1,9 +1,6 @@
-import { syncCosmetics } from "../services/cosmeticsSyncService.js";
-import { syncNewCosmetics } from "../services/newCosmeticsService.js";
-import { syncShopEntries } from "../services/shopSyncService.js";
+import { runFullSync } from "../services/fullSyncService.js";
 import {
   getCosmetics,
-  getCosmeticsCount,
   getCosmeticsMeta,
   getNewCosmetics,
   getNewCosmeticsCount,
@@ -41,9 +38,7 @@ function extractFilterArray(value) {
 
 export async function triggerSync(req, res, next) {
   try {
-    const cosmeticsResult = await syncCosmetics();
-    const newResult = await syncNewCosmetics();
-    const shopResult = await syncShopEntries();
+    const { cosmeticsResult, newResult, shopResult } = await runFullSync();
     res.status(200).json({
       message: "Sincronização concluída",
       totals: {
