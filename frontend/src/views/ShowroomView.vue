@@ -410,9 +410,10 @@ function isInCart(cosmetic) {
       Nenhum item encontrado com os filtros atuais.
     </div>
 
-    <div v-if="catalogStore.pagination.total" class="flex items-center justify-center gap-4">
+    <div v-if="catalogStore.pagination.total" class="flex items-center justify-between gap-4">
       <BaseButton
         variant="secondary"
+        :class="{ invisible:catalogStore.pagination.page === 1 }"
         :disabled="catalogStore.loading || catalogStore.pagination.page === 1"
         @click="catalogStore.goToPage(catalogStore.pagination.page - 1)"
       >
@@ -422,6 +423,7 @@ function isInCart(cosmetic) {
         Página {{ catalogStore.pagination.page }} de {{ catalogStore.pagination.totalPages ?? '?' }}
       </p>
       <BaseButton
+        :class="{ invisible: catalogStore.pagination.page === catalogStore.pagination.totalPages }"
         :disabled="catalogStore.loading || !catalogStore.pagination.hasMore"
         @click="catalogStore.goToPage(catalogStore.pagination.page + 1)"
       >

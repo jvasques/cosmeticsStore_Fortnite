@@ -120,9 +120,10 @@ function backToBundleDetails() {
       Nenhuma oferta disponível agora.
     </div>
 
-    <div v-if="catalogStore.bundlePagination.totalPages" class="flex items-center justify-center gap-4">
+    <div v-if="catalogStore.bundlePagination.totalPages" class="flex items-center justify-between gap-4">
       <BaseButton
         variant="secondary"
+        :class="{ invisible: catalogStore.bundlePagination.page === 1 }"
         :disabled="catalogStore.shopLoading || catalogStore.bundlePagination.page === 1"
         @click="catalogStore.loadShop({ bundle: true, page: catalogStore.bundlePagination.page - 1 })"
       >
@@ -132,6 +133,7 @@ function backToBundleDetails() {
         Página {{ catalogStore.bundlePagination.page }} de {{ catalogStore.bundlePagination.totalPages ?? '?' }}
       </p>
       <BaseButton
+      :class="{ invisible: catalogStore.bundlePagination.page === catalogStore.bundlePagination.totalPages }"
         :disabled="catalogStore.shopLoading || !catalogStore.bundlePagination.hasMore"
         @click="catalogStore.loadShop({ bundle: true, page: catalogStore.bundlePagination.page + 1 })"
       >
