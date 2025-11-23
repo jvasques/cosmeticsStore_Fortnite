@@ -11,8 +11,8 @@ function log(message) {
 
 export function startSyncScheduler() {
   const schedule = env.syncCronSchedule;
-  if (!schedule || schedule.toLowerCase() === "off") {
-    log("Sincronização automática desabilitada (SYNC_CRON_SCHEDULE)");
+  if (!schedule || schedule.toLowerCase() === "off" || schedule.toLowerCase() === "") {
+    log("Sincronização automática desabilitada");
     return;
   }
 

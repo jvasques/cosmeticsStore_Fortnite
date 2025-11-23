@@ -16,11 +16,11 @@ const env = {
     expiresIn: process.env.JWT_EXPIRES_IN || "12h",
   },
   db: {
-    host: process.env.POSTGRES_HOST || "localhost",
-    port: Number(process.env.POSTGRES_PORT || 5432),
-    database: process.env.POSTGRES_DB || "fortnite",
-    user: process.env.POSTGRES_USER || "fortnite",
-    password: process.env.POSTGRES_PASSWORD || "fortnite",
+    host: process.env.POSTGRES_HOST,
+    port: Number(process.env.POSTGRES_PORT),
+    database: process.env.POSTGRES_DB,
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
   },
   cors: {
     allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS || "*")
@@ -28,8 +28,8 @@ const env = {
       .map((origin) => origin.trim())
       .filter(Boolean),
   },
-  syncCronSchedule: process.env.SYNC_CRON_SCHEDULE || "0 3 * * *",
-  syncCronTimezone: process.env.SYNC_CRON_TZ || "America/Sao_Paulo",
+  syncCronSchedule: process.env.SYNC_CRON_SCHEDULE,
+  syncCronTimezone: process.env.SYNC_CRON_TZ,
 };
 
 export default env;
