@@ -101,7 +101,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#04050a] text-white">
+  <div class="min-h-screen bg-[#04050a] pb-28 text-white">
     <div class="mx-auto flex max-w-7xl flex-col gap-8 px-4 pb-16 pt-8 lg:px-8">
       <header
         class="glass-panel sticky top-4 z-30 flex flex-wrap items-center justify-between gap-4 border border-white/10 px-6 py-4"
@@ -169,6 +169,14 @@ onBeforeUnmount(() => {
       </transition>
     </div>
   </div>
+  <footer
+    class="fixed bottom-0 left-0 w-full border-t border-white/10 bg-[#04050a]/95 py-4 text-center text-sm text-white/70 backdrop-blur"
+  >
+    Desenvolvido por
+    <a href="https://vasques.dev" target="_blank" rel="noopener noreferrer" class="text-white hover:text-brand-light">
+      João Paulo Vasques
+    </a>
+  </footer>
 </template>
 
 <style scoped>
